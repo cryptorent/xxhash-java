@@ -7,4 +7,4 @@ Hash online calculator:
 * https://www.pelock.com/pl/produkty/hash-kalkulator
 * https://md5calc.com/hash
 
-
+XXH3 - modified from https://github.com/OpenHFT/Zero-Allocation-Hashing

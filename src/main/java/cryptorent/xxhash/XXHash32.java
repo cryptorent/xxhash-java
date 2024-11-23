@@ -25,11 +25,12 @@ public class XXHash32 {
         return hash(input, input.length, 0, seed);
     }
 
-    public static int hash(byte[] input, int length, int offset, int seed) {
+    public static int hash(byte[] input, int len, int offset, int seed) {
         int hash;
+        int bufLimit = offset + len;
         // If the input is longer or equal to 16 bytes, process in 16-byte chunks
-        if (length >= 16) {
-            int limit = length - 16;
+        if (bufLimit >= 16) {
+            int limit = bufLimit - 16;
             // Initialize four running hash values
             int v1 = seed + PRIME32_1 + PRIME32_2;
             int v2 = seed + PRIME32_2;
@@ -56,17 +57,17 @@ public class XXHash32 {
         }
 
         // Add the length of the input to the hash
-        hash += length;
+        hash += len;
 
         // Process remaining 4-byte chunks
-        while (offset + 4 <= length) {
+        while (offset + 4 <= bufLimit) {
             hash += getIntLE(input, offset) * PRIME32_3;
             hash = Integer.rotateLeft(hash, 17) * PRIME32_4;
             offset += 4;
         }
 
         // Process remaining bytes (less than 4)
-        while (offset < length) {
+        while (offset < bufLimit) {
             hash += (input[offset] & 0xFF) * PRIME32_5;
             hash = Integer.rotateLeft(hash, 11) * PRIME32_1;
             offset++;

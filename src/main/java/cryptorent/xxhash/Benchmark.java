@@ -1,5 +1,8 @@
 package cryptorent.xxhash;
 
+import java.util.Map;
+import java.util.TreeMap;
+
 public class Benchmark {
     public static void run() {
         // Define the size of the byte array (e.g., 10 MB)
@@ -12,50 +15,33 @@ public class Benchmark {
         }
 
         for (BenchContainer.HashId hashID : BenchContainer.HashId.values()) {
-
-
-            // Define the seed value for the hash function
-            final int seed = 0;
-
-            // Number of iterations to perform the hash (to get measurable time)
-            final int iterations = 10;
-
-            // Variable to accumulate hash results to prevent optimization
+            //trick, because time is musual too long for smallest or largest chunk size
+            int[] chunkSizes = { 5,size, 10,size, 20,size, 40,size, 200,size, 1000};
+            Map<Integer,Long> best = new TreeMap<>();
+            for (int chunkSize: chunkSizes) {
+                best.put(chunkSize,Long.MAX_VALUE);
+            }
             long hashAccumulator = 0;
-
-            // Perform a warm-up run to allow the JVM to optimize the code
-            for (int i = 0; i < 30; i++) {
-                hashAccumulator += BenchContainer.hash(hashID, data, data.length, 0);
-            }
-
-            long best = Long.MAX_VALUE;
-            for (int i = 0; i < 100; i++) {
-                // Record the start time in nanoseconds
-                long startTime = System.nanoTime();
-
-                // Perform the hashing multiple times
-                for (int j = 0; j < iterations; j++) {
-                    hashAccumulator += BenchContainer.hash(hashID, data, data.length, 0);
+            for (int i = 0; i < 10; i++) {
+                for (int chunkSize : chunkSizes) {
+                    long startTime = System.nanoTime();
+                    int offset = 0;
+                    while (offset + chunkSize <= data.length) {
+                        hashAccumulator += BenchContainer.hash(hashID, data, chunkSize, offset);
+                        offset += chunkSize;
+                    }
+                    long endTime = System.nanoTime();
+                    long totalTime = endTime - startTime;
+                    if (totalTime < best.get(chunkSize))
+                        best.replace(chunkSize, totalTime);
                 }
-
-                // Record the end time in nanoseconds
-                long endTime = System.nanoTime();
-
-                // Calculate the total time taken in nanoseconds
-                long totalTime = endTime - startTime;
-                if (totalTime < best)
-                    best = totalTime;
             }
-
-            // Calculate the average time per hash in nanoseconds
-            double averageTimePerHash = (double) best / iterations;
-
-            // Convert total time to milliseconds for easier readability
-            double totalTimeMs = best / 1_000_000.0;
-            System.out.println(hashID);
-            System.out.printf("Total time for %d hashes: %.3f ms%n", iterations, totalTimeMs);
-            System.out.printf("Average time per hash: %.3f ns%n", averageTimePerHash);
             System.out.println("Hash accumulator (to prevent optimization): " + hashAccumulator);
+            System.out.println(hashID);
+            for (int chunkSize: best.keySet()) {
+                double totalTimeMs = best.get(chunkSize) / 1_000_000.0;
+                System.out.printf("chunk size = %d best time %.3f ms%n", chunkSize, totalTimeMs);
+            }
         }
     }
 }

@@ -25,11 +25,12 @@ public class XXHash64 {
         return hash(input, input.length, 0, seed);
     }
 
-    public static long hash(byte[] input, int length, int offset, long seed) {
+    public static long hash(byte[] input, int len, int offset, long seed) {
         long hash;
+        int bufLimit = offset + len;
         // If the input is longer or equal to 32 bytes, process in 32-byte chunks
-        if (length >= 32) {
-            int limit = length - 32;
+        if (bufLimit >= 32) {
+            int limit = bufLimit - 32;
             long v1 = seed + PRIME64_1 + PRIME64_2;
             long v2 = seed + PRIME64_2;
             long v3 = seed + 0;
@@ -60,10 +61,10 @@ public class XXHash64 {
         }
 
         // Add the length of the input to the hash
-        hash += length;
+        hash += len;
 
         // Processing 8-byte blocks
-        while (offset + 8 <= length) {
+        while (offset + 8 <= bufLimit) {
             long k1 = getLongLE(input, offset);
             k1 *= PRIME64_2;
             k1 = Long.rotateLeft(k1, 31);
@@ -74,14 +75,14 @@ public class XXHash64 {
         }
 
         // Processing 4-byte blocks
-        while (offset + 4 <= length) {
+        while (offset + 4 <= bufLimit) {
             hash ^= (getIntLE(input, offset) & 0xFFFFFFFFL) * PRIME64_1;
             hash = Long.rotateLeft(hash, 23) * PRIME64_2 + PRIME64_3;
             offset += 4;
         }
 
         // Process remaining bytes (less than 8)
-        while (offset < length) {
+        while (offset < bufLimit) {
             hash ^= (input[offset] & 0xFFL) * PRIME64_5;
             hash = Long.rotateLeft(hash, 11) * PRIME64_1;
             offset++;
